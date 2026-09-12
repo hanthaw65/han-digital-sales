@@ -22,12 +22,17 @@ async function context() {
 export async function GET() {
   const ctx = await context();
   if (!ctx) return bad("Login သို့မဟုတ် Access Code လိုအပ်ပါတယ်", 401);
-  const [{ data: products, error: productError }, { data: sales, error: saleError }] = await Promise.all([
+  const [{ data: products, error: productError }, { data: sales, error: saleError }, { data: finance, error: financeError }, { data: financeSummary, error: summaryError }] = await Promise.all([
     ctx.supabase.from("products").select("*").eq("workspace_id", ctx.member.workspace_id).order("name"),
     ctx.supabase.from("sales").select("*").eq("workspace_id", ctx.member.workspace_id).order("sale_date", { ascending: false }).limit(250),
+    ctx.supabase.from("finance_entries").select("*").eq("workspace_id", ctx.member.workspace_id).order("entry_date", { ascending: false }).order("id", { ascending: false }).limit(250),
+    ctx.supabase.rpc("finance_summary", { p_workspace_id: ctx.member.workspace_id }),
   ]);
   if (productError || saleError) return bad(productError?.message || saleError?.message || "Data မရနိုင်ပါ", 500);
+  if (financeError || summaryError) return bad(financeError?.message || summaryError?.message || "ငွေစာရင်း မရနိုင်ပါ", 500);
   return Response.json({
+    financeSummary,
+    finance: (finance ?? []).map(f => ({ id: Number(f.id), kind: f.kind, label: f.label, amount: Number(f.amount), entryDate: f.entry_date, paymentMethod: f.payment_method, note: f.note, automatic: f.source_product_id !== null })),
     user: { displayName: ctx.member.display_name, role: ctx.member.role },
     products: (products ?? []).map(p => ({
       id: Number(p.id), name: p.name, packageName: p.package_name, purchasePrice: Number(p.purchase_price),
@@ -46,6 +51,27 @@ export async function POST(request: Request) {
   const ctx = await context();
   if (!ctx) return bad("Login သို့မဟုတ် Access Code လိုအပ်ပါတယ်", 401);
   const body = await request.json() as Record<string, unknown>;
+
+  if (body.action === "add-finance" || body.action === "edit-finance") {
+    if (ctx.member.role !== "admin") return bad("Admin သာ ငွေစာရင်းပြင်နိုင်ပါတယ်", 403);
+    const kind = String(body.kind ?? "");
+    const amount = Number(body.amount);
+    const label = String(body.label ?? "").trim();
+    const entryDate = String(body.entryDate ?? "");
+    const paymentMethod = String(body.paymentMethod ?? "Cash");
+    if (!["capital", "stock_expense"].includes(kind) || !label || !Number.isSafeInteger(amount) || amount <= 0 || amount > 99999999999999) return bad("အမျိုးအစား၊ နာမည်နဲ့ ပမာဏကို မှန်ကန်စွာဖြည့်ပါ");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(entryDate) || !["KPay", "Wave", "Bank", "Cash", "USDT"].includes(paymentMethod)) return bad("ရက်စွဲနဲ့ ငွေပေးချေမှုကို စစ်ပါ");
+    const values = { kind, label, amount, entry_date: entryDate, payment_method: paymentMethod, note: String(body.note ?? "").trim() };
+    if (body.action === "edit-finance") {
+      const { data: updated, error } = await ctx.supabase.from("finance_entries").update(values).eq("id", Number(body.id)).eq("workspace_id", ctx.member.workspace_id).is("source_product_id", null).select("id").maybeSingle();
+      if (error) return bad(error.message);
+      if (!updated) return bad("ပြင်နိုင်သည့် မှတ်တမ်းမတွေ့ပါ", 404);
+      return Response.json({ saved: true });
+    }
+    const { error } = await ctx.supabase.from("finance_entries").insert({ ...values, workspace_id: ctx.member.workspace_id });
+    if (error) return bad(error.message);
+    return Response.json({ saved: true }, { status: 201 });
+  }
 
   if (body.action === "add-product") {
     if (ctx.member.role !== "admin") return bad("Admin သာ Product ထည့်နိုင်ပါတယ်", 403);
