@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Finance, FinanceEntry, FinanceSummary } from "./finance";
 
 type User = { displayName: string; email: string; role: "admin" | "staff" };
 type Product = { id: number; name: string; packageName: string; purchasePrice: number; defaultSalePrice: number; stock: number; lowStockAt: number; supplier: string };
 type Sale = { id: number; productName: string; customerName: string; customerContact: string; quantity: number; purchasePrice: number; salePrice: number; paidAmount: number; paymentMethod: string; paymentStatus: "paid" | "partial" | "unpaid"; saleDate: string; expiryDate: string; staffName: string; note: string };
-type Data = { user: User; products: Product[]; sales: Sale[] };
+type Data = { user: User; products: Product[]; sales: Sale[]; finance: FinanceEntry[]; financeSummary: FinanceSummary };
 
 const money = (n: number) => `${new Intl.NumberFormat("en-US").format(n)} Ks`;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -154,14 +155,16 @@ export function Dashboard() {
         </section>
 
         <Tabs defaultValue="sales" className="gap-5">
-          <TabsList className="fixed inset-x-3 bottom-3 z-40 mx-auto grid h-16 max-w-md grid-cols-3 rounded-2xl border border-white/10 bg-[#111b2d]/95 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mx-0 md:h-11 md:w-fit md:grid-cols-3 md:rounded-xl">
+          <TabsList className="fixed inset-x-3 bottom-3 z-40 mx-auto grid h-16 max-w-md grid-cols-4 rounded-2xl border border-white/10 bg-[#111b2d]/95 p-1.5 shadow-2xl backdrop-blur-xl md:static md:mx-0 md:h-11 md:w-fit md:grid-cols-4 md:rounded-xl">
             <TabsTrigger value="sales" className="rounded-xl text-xs md:text-sm"><ShoppingBag /> အရောင်း</TabsTrigger>
             <TabsTrigger value="stock" className="rounded-xl text-xs md:text-sm"><Boxes /> Stock</TabsTrigger>
             <TabsTrigger value="expiry" className="rounded-xl text-xs md:text-sm"><Clock3 /> Expired</TabsTrigger>
+            <TabsTrigger value="finance" className="rounded-xl text-xs md:text-sm"><WalletCards /> ငွေစာရင်း</TabsTrigger>
           </TabsList>
           <TabsContent value="sales"><SalesList sales={filteredSales} search={search} setSearch={setSearch} isAdmin={data?.user.role === "admin"} /></TabsContent>
           <TabsContent value="stock"><StockList products={data?.products ?? []} isAdmin={data?.user.role === "admin"} /></TabsContent>
           <TabsContent value="expiry"><ExpiryList sales={data?.sales ?? []} /></TabsContent>
+          <TabsContent value="finance"><Finance entries={data?.finance ?? []} summary={data?.financeSummary ?? { capital: 0, stockSpending: 0, received: 0 }} isAdmin={data?.user.role === "admin"} saving={saving} onSubmit={submit} /></TabsContent>
         </Tabs>
       </div>
 
