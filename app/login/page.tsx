@@ -10,8 +10,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <span className="grid size-11 place-items-center rounded-xl bg-emerald-400 text-slate-950"><ShoppingBag /></span>
           <div><h1 className="text-xl font-bold">Digital Sales</h1><p className="text-xs text-slate-400">Sales · Stock · Expired</p></div>
         </div>
-        <h2 className="mb-1 text-lg font-semibold">Account ဝင်ရန်</h2>
-        <p className="mb-5 text-sm leading-6 text-slate-400">Han နှင့် ဝန်ထမ်းများအတွက် သီးသန့်စာရင်းစနစ်</p>
+        <h2 className="mb-5 text-lg font-semibold">Account ဝင်ရန်</h2>
         <form className="grid gap-4">
           <label className="grid gap-1.5 text-sm text-slate-300">Email<input name="email" type="email" required className="h-11 rounded-xl border border-white/12 bg-white/5 px-3 text-base outline-none focus:border-emerald-400" placeholder="name@gmail.com" /></label>
           <label className="grid gap-1.5 text-sm text-slate-300">Password<input name="password" type="password" minLength={8} required className="h-11 rounded-xl border border-white/12 bg-white/5 px-3 text-base outline-none focus:border-emerald-400" placeholder="အနည်းဆုံး 8 လုံး" /></label>
