@@ -1,4 +1,5 @@
 import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
 import { login, signup } from "./actions";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ message?: string }> }) {
@@ -14,6 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form className="grid gap-4">
           <label className="grid gap-1.5 text-sm text-slate-300">Email<input name="email" type="email" required className="h-11 rounded-xl border border-white/12 bg-white/5 px-3 text-base outline-none focus:border-emerald-400" placeholder="name@gmail.com" /></label>
           <label className="grid gap-1.5 text-sm text-slate-300">Password<input name="password" type="password" minLength={8} required className="h-11 rounded-xl border border-white/12 bg-white/5 px-3 text-base outline-none focus:border-emerald-400" placeholder="အနည်းဆုံး 8 လုံး" /></label>
+          <Link href="/forgot-password" className="-mt-2 justify-self-end text-sm font-medium text-emerald-300 hover:text-emerald-200">Password မေ့နေပါသလား?</Link>
           {message && <p className="rounded-xl bg-cyan-400/10 p-3 text-sm leading-6 text-cyan-200">{message}</p>}
           <button formAction={login} className="h-11 rounded-xl bg-emerald-400 font-semibold text-slate-950 hover:bg-emerald-300">Login</button>
           <button formAction={signup} className="h-11 rounded-xl border border-white/12 bg-white/5 font-semibold text-white hover:bg-white/10">Account အသစ်ဖွင့်မယ်</button>
