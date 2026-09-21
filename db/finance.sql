@@ -28,18 +28,6 @@ create policy admins_update_finance on public.finance_entries for update to auth
 );
 grant select,insert,update on public.finance_entries to authenticated;
 grant usage,select on sequence public.finance_entries_id_seq to authenticated;
-create function public.log_initial_stock_purchase() returns trigger language plpgsql security invoker set search_path='' as $$
-begin
- if new.stock>0 and new.purchase_price>0 then
-  insert into public.finance_entries(workspace_id,kind,label,amount,payment_method,note,source_product_id)
-  values(new.workspace_id,'stock_expense',new.name || case when new.package_name<>'' then ' · '||new.package_name else '' end,
-   new.purchase_price*new.stock,'Cash','Product အသစ် · '||new.stock||' ခု × '||new.purchase_price||' Ks (အပြည့်ပေးချေထားသည်ဟု မှတ်ထား)',new.id);
- end if;
- return new;
-end $$;
-revoke all on function public.log_initial_stock_purchase() from public,anon;
-grant execute on function public.log_initial_stock_purchase() to authenticated;
-create trigger initial_stock_purchase after insert on public.products for each row execute function public.log_initial_stock_purchase();
 create function public.finance_summary(p_workspace_id uuid) returns jsonb language sql stable security invoker set search_path='' as $$
  select jsonb_build_object(
  'capital',coalesce((select sum(amount) from public.finance_entries where workspace_id=p_workspace_id and kind='capital'),0),
@@ -53,4 +41,3 @@ insert into public.finance_entries(workspace_id,kind,label,amount,note,seed_key)
  select w.id,'capital',v.label,30000,'စတင်အရင်း · မှတ်တမ်းတင်သည့်ရက်ကို အသုံးပြုထား',v.seed_key
  from public.workspaces w cross join (values('Han','initial-han'),('Partner','initial-partner')) v(label,seed_key)
  where w.name='Han Digital Sales';
-
